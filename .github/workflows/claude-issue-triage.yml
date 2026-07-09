@@ -1,0 +1,49 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    if: github.event.issue.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowed-tools "Bash(gh label list:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh issue view:*),Read,Grep,Glob"'
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} de este repositorio y haz lo siguiente:
+
+            1. Lee el título y cuerpo del issue con `gh issue view ${{ github.event.issue.number }}`.
+            2. Lee el código relevante del repo (game.js, index.html, style.css) para entender
+               el contexto necesario y fundamentar el diagnóstico.
+            3. Labels: obtén los labels existentes con `gh label list`. Asigna con
+               `gh issue edit ${{ github.event.issue.number }} --add-label "..."` SOLO labels de
+               esa lista que realmente correspondan (1 a 3 labels). No inventes ni crees labels
+               nuevos.
+            4. Diagnóstico: publica UN comentario con
+               `gh issue comment ${{ github.event.issue.number }} --body "..."`, en español, con
+               esta estructura:
+               - **Resumen** — qué reporta el issue en 1-2 frases.
+               - **Tipo** — bug / mejora / duda / documentación.
+               - **Causa probable** — hipótesis técnica referenciando funciones/archivos
+                 concretos (ej. `collide()`, `clearLines()` en `game.js`).
+               - **Archivos afectados** — lista de archivos/áreas a tocar.
+               - **Pasos sugeridos para la solución** — enfoque de implementación, alto nivel.
+               - **Dudas / información faltante** — si el issue es ambiguo.
+            5. Si el issue fue editado y ya existe un comentario de diagnóstico tuyo previo,
+               publica uno nuevo actualizado (no hace falta borrar el anterior).
+            6. Sé conciso. No implementes la solución ni abras pull requests.
