@@ -22,8 +22,8 @@ Verificar cambios manualmente jugando en el navegador (mover/rotar/soft drop/har
 Todo el estado y la lógica viven en `game.js` (~300 líneas), sin módulos ni clases: variables globales + funciones top-level operando sobre ellas.
 
 - **Estado global**: `board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId`.
-- **Tablero**: matriz `ROWS × COLS` (20×10); cada celda es `0` (vacía) o índice de color 1–7 (`createBoard`).
-- **Piezas**: matrices cuadradas en `PIECES`; `rotateCW` rota transponiendo + invirtiendo filas.
+- **Tablero**: matriz `ROWS × COLS` (20×10); cada celda es `0` (vacía) o índice de color 1–8 (`createBoard`).
+- **Piezas**: matrices cuadradas en `PIECES`; `rotateCW` rota transponiendo + invirtiendo filas. Incluye la pieza "tuerca" (3×3 con hueco central en `0`), que deja un hueco real en el tablero al aterrizar: esa fila no se limpia hasta rellenarlo.
 - **Colisiones**: `collide(shape, ox, oy)` — única fuente de verdad para saber si una posición/rotación es válida.
 - **Wall kicks**: `tryRotate()` prueba desplazamientos ±1/±2 columnas si la rotación directa colisiona.
 - **Ciclo de vida de la pieza**: `spawn()` → `merge()`/`lockPiece()` al aterrizar → `clearLines()` → siguiente `spawn()`. Si `spawn()` colisiona de inmediato, se dispara `endGame()`.
