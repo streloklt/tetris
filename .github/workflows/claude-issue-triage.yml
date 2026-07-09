@@ -47,3 +47,5 @@ jobs:
             5. Si el issue fue editado y ya existe un comentario de diagnóstico tuyo previo,
                publica uno nuevo actualizado (no hace falta borrar el anterior).
             6. Sé conciso. No implementes la solución ni abras pull requests.
+            7. El comentario debe estar en formato Markdown compatible con GitHub (encabezados,
+               listas, code spans con backticks, etc.).
