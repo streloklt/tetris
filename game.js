@@ -4,17 +4,9 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 
-const COLORS = [
-  null,
-  '#4dd0e1', // I - cyan
-  '#ffd54f', // O - yellow
-  '#ba68c8', // T - purple
-  '#81c784', // S - green
-  '#e57373', // Z - red
-  '#5b9bd5', // J - blue
-  '#ffb74d', // L - orange
-  '#b0bec5', // Tuerca - gris acero
-];
+// Paleta activa (COLORS) y función de dibujo de bloque dependen del skin
+// seleccionado; se resuelven en applySkin() a partir de SKINS.
+let COLORS;
 
 const PIECES = [
   null,
@@ -42,11 +34,58 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggle = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 
 const THEME_KEY = 'tetris-theme';
 const GRID_COLOR = { dark: '#22222e', light: '#d8d8e2' };
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, theme;
+const SKIN_KEY = 'tetris-skin';
+
+// Cada skin define su propia paleta y su propia función de dibujo de bloque.
+// draw()/drawNext() llaman siempre a SKINS[skin].drawBlock en vez de una
+// función fija, así el cambio de skin no requiere tocar el ciclo de render.
+const SKINS = {
+  retro: {
+    colors: [
+      null,
+      '#4dd0e1', // I - cyan
+      '#ffd54f', // O - yellow
+      '#ba68c8', // T - purple
+      '#81c784', // S - green
+      '#e57373', // Z - red
+      '#5b9bd5', // J - blue
+      '#ffb74d', // L - orange
+      '#b0bec5', // Tuerca - gris acero
+    ],
+    drawBlock: drawBlockRetro,
+  },
+  neon: {
+    colors: [
+      null,
+      '#00fff2', '#faff00', '#ff00e6', '#00ff6a',
+      '#ff2d55', '#2f7dff', '#ff9500', '#c8f7ff',
+    ],
+    drawBlock: drawBlockNeon,
+  },
+  pastel: {
+    colors: [
+      null,
+      '#a8dadc', '#ffe8a3', '#d8bfd8', '#b5e3b5',
+      '#f4b6b6', '#a9c9f4', '#ffd2a6', '#dcdce6',
+    ],
+    drawBlock: drawBlockPastel,
+  },
+  pixel: {
+    colors: [
+      null,
+      '#4dd0e1', '#ffd54f', '#ba68c8', '#81c784',
+      '#e57373', '#5b9bd5', '#ffb74d', '#b0bec5',
+    ],
+    drawBlock: drawBlockPixel,
+  },
+};
+
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, theme, skin;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -162,7 +201,8 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
-function drawBlock(context, x, y, colorIndex, size, alpha) {
+// Retro: estilo original, bloques cuadrados planos con highlight superior.
+function drawBlockRetro(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
   const color = COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
@@ -171,6 +211,71 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.globalAlpha = 1;
+}
+
+// Neon: fondo negro (ver applySkin) + resplandor con shadowBlur/shadowColor.
+function drawBlockNeon(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const color = COLORS[colorIndex];
+  context.save();
+  context.globalAlpha = alpha ?? 1;
+  context.shadowBlur = 14;
+  context.shadowColor = color;
+  context.fillStyle = 'rgba(0,0,0,0.85)';
+  context.fillRect(x * size + 2, y * size + 2, size - 4, size - 4);
+  context.strokeStyle = color;
+  context.lineWidth = 2;
+  context.strokeRect(x * size + 3, y * size + 3, size - 6, size - 6);
+  context.restore();
+}
+
+// Pastel: colores suaves + esquinas redondeadas (roundRect con fallback manual).
+function drawBlockPastel(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const color = COLORS[colorIndex];
+  const px = x * size + 2;
+  const py = y * size + 2;
+  const s = size - 4;
+  const r = Math.min(6, s / 2);
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.beginPath();
+  if (typeof context.roundRect === 'function') {
+    context.roundRect(px, py, s, s, r);
+  } else {
+    context.moveTo(px + r, py);
+    context.arcTo(px + s, py, px + s, py + s, r);
+    context.arcTo(px + s, py + s, px, py + s, r);
+    context.arcTo(px, py + s, px, py, r);
+    context.arcTo(px, py, px + s, py, r);
+    context.closePath();
+  }
+  context.fill();
+  context.globalAlpha = 1;
+}
+
+// Pixel art: relleno plano + patrón de dither (mini cuadros) para dar textura.
+function drawBlockPixel(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const color = COLORS[colorIndex];
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const s = size - 2;
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.fillRect(px, py, s, s);
+  const cell = Math.max(2, Math.floor(s / 6));
+  context.fillStyle = 'rgba(0,0,0,0.18)';
+  for (let iy = 0; iy < s; iy += cell * 2) {
+    for (let ix = 0; ix < s; ix += cell * 2) {
+      context.fillRect(px + ix, py + iy, cell, cell);
+      context.fillRect(px + ix + cell, py + iy + cell, cell, cell);
+    }
+  }
+  context.strokeStyle = 'rgba(255,255,255,0.3)';
+  context.lineWidth = 1;
+  context.strokeRect(px + 0.5, py + 0.5, s - 1, s - 1);
   context.globalAlpha = 1;
 }
 
@@ -192,6 +297,7 @@ function drawGrid() {
 }
 
 function draw() {
+  const drawBlock = SKINS[skin].drawBlock;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
 
@@ -214,6 +320,7 @@ function draw() {
 }
 
 function drawNext() {
+  const drawBlock = SKINS[skin].drawBlock;
   const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
   const shape = next.shape;
@@ -237,6 +344,22 @@ function applyTheme(t) {
   document.body.classList.toggle('light', theme === 'light');
   themeToggle.checked = theme === 'light';
   localStorage.setItem(THEME_KEY, theme);
+}
+
+// Aplica el skin (paleta + función de dibujo); no redibuja por sí sola para
+// poder usarse durante init() antes de que exista `current`/`next`. El
+// listener del selector la combina con draw()/drawNext() para el redibujado
+// inmediato al cambiar de skin en caliente.
+function applySkin(s) {
+  if (!SKINS[s]) s = 'retro';
+  skin = s;
+  COLORS = SKINS[skin].colors;
+  // Neon necesita fondo realmente negro para que el glow resalte,
+  // independiente del tema claro/oscuro (ortogonal al skin).
+  canvas.style.background = skin === 'neon' ? '#000' : '';
+  nextCanvas.style.background = skin === 'neon' ? '#000' : '';
+  if (skinSelect) skinSelect.value = skin;
+  localStorage.setItem(SKIN_KEY, skin);
 }
 
 function togglePause() {
@@ -272,6 +395,7 @@ function loop(ts) {
 
 function init() {
   applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  applySkin(localStorage.getItem(SKIN_KEY) || 'retro');
   board = createBoard();
   score = 0;
   lines = 0;
@@ -316,5 +440,12 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 themeToggle.addEventListener('change', () => applyTheme(themeToggle.checked ? 'light' : 'dark'));
+skinSelect.addEventListener('change', () => {
+  applySkin(skinSelect.value);
+  // Redibujado inmediato sin esperar al siguiente frame del loop
+  // (importante si el juego está pausado o en game over).
+  draw();
+  drawNext();
+});
 
 init();

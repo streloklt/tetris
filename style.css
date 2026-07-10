@@ -161,6 +161,23 @@ body {
   transform: translateX(20px);
 }
 
+/* ---- Skin select ---- */
+.skin-select {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.skin-select:focus {
+  outline: 1px solid var(--value-color);
+}
+
 /* ---- Controles ---- */
 .controls ul {
   list-style: none;
