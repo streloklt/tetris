@@ -241,3 +241,127 @@ kbd {
 #restart-btn:hover {
   background: var(--btn-hover-bg);
 }
+
+/* ---- Tabla de récords ---- */
+.highscores-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+}
+
+.highscore-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--fg);
+}
+
+.highscore-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.highscore-value {
+  color: var(--value-color);
+  font-weight: 700;
+}
+
+.highscore-new {
+  background: var(--btn-bg);
+  color: var(--btn-color);
+}
+
+.highscore-new .highscore-value {
+  color: var(--btn-color);
+}
+
+.highscore-empty {
+  font-size: 12px;
+  color: var(--controls-color);
+}
+
+.highscores-stats {
+  font-size: 11px;
+  color: var(--controls-color);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.reset-btn {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--controls-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reset-btn:hover {
+  background: var(--kbd-bg);
+  color: var(--fg);
+}
+
+/* ---- Overlay: nuevo récord + tabla ---- */
+.new-highscore,
+.highscores-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: 220px;
+}
+
+.new-highscore.hidden,
+.highscores-section.hidden {
+  display: none;
+}
+
+.new-highscore label {
+  font-size: 12px;
+  color: var(--overlay-score-color);
+}
+
+.new-highscore-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+#player-name {
+  flex: 1;
+  min-width: 0;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  color: var(--fg);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+#save-score-btn {
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#save-score-btn:hover {
+  background: var(--btn-hover-bg);
+}
+
+.highscores-section .highscores-list {
+  width: 100%;
+}
